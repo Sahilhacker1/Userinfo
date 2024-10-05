@@ -7,7 +7,7 @@ import logging
 
 # Retrieve the bot token and channel ID from environment variables
 TOKEN = "7900470468:AAH5k_KcunG52E043Ld1OvruL8ijshcizp8"
-CHANNEL_ID = "2389759470"  # e.g., "@your_channel_username"
+CHANNEL_ID = "-1002389759470"  # e.g., "@your_channel_username"
 
 # Check if the token or channel ID is None or contains only whitespace
 if not TOKEN:
