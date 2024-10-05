@@ -1,7 +1,7 @@
 import os
 import telebot
 from telebot.apihelper import ApiException
-from flask import Flask
+from flask import Flask, request
 import threading
 import logging
 import time
@@ -13,8 +13,8 @@ logging.basicConfig(
 )
 
 # Retrieve the bot token and channel ID from environment variables
-TOKEN = "7900470468:AAH5k_KcunG52E043Ld1OvruL8ijshcizp8"
-CHANNEL_ID = "-1002389759470"  # e.g., "@your_channel_username"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")  # e.g., "@your_channel_username"
 
 # Check if the token or channel ID is None or contains only whitespace
 if not TOKEN:
@@ -22,18 +22,30 @@ if not TOKEN:
 if not CHANNEL_ID:
     raise ValueError("No valid Telegram channel ID found. Please set the TELEGRAM_CHANNEL_ID environment variable.")
 
-bot = telebot.TeleBot(TOKEN)
+bot = telebot.TeleBot(TOKEN, threaded=True)  # Enable threaded mode to handle multiple users
 
 # Initialize Flask application
 app = Flask(__name__)
+
+# Webhook Setup
+WEBHOOK_URL_BASE = "https://<your-app-name>.herokuapp.com"
+WEBHOOK_URL_PATH = f"/{TOKEN}/"
 
 @app.route('/')
 def home():
     return "I am alive"
 
+@app.route(WEBHOOK_URL_PATH, methods=['POST'])
+def webhook():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return '', 200
+
 def run_flask():
     try:
-        app.run(host='0.0.0.0', port=8080)  # Flask runs on port 8080
+        # Run Flask app in threaded mode to handle multiple requests concurrently
+        app.run(host='0.0.0.0', port=8080, threaded=True)
     except Exception as e:
         logging.error(f"Error in Flask server: {e}")
 
@@ -76,19 +88,15 @@ def send_welcome(message):
         logging.error(f"Unexpected error when sending message for user {user_id}: {e}")
 
 def main():
-    try:
-        # Start the keep-alive server
-        keep_alive()
-        # Start polling for the Telegram bot
-        logging.info("Bot started. Polling...")
-        bot.infinity_polling(timeout=10, long_polling_timeout=5)  # Configured for network stability
+    # Start the keep-alive server
+    keep_alive()
 
-    except Exception as e:
-        logging.error(f"Critical error in main loop: {e}")
-        # Attempt to recover after a crash
-        time.sleep(5)
-        main()  # Restart main loop
+    # Remove any previous webhook and set the new one
+    bot.remove_webhook()
+    time.sleep(1)
+    bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH)
+
+    logging.info("Webhook set. Bot is now running...")
 
 if __name__ == "__main__":
     main()
-    
