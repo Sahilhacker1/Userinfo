@@ -13,8 +13,8 @@ logging.basicConfig(
 )
 
 # Retrieve the bot token and channel ID from environment variables
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")  # e.g., "@your_channel_username"
+TOKEN = "7900470468:AAGwhOEniXCGEcc5cMPLW97cLu6GOdcxXeM"
+CHANNEL_ID = "-1002389759470"  # e.g., "@your_channel_username"
 
 # Check if the token or channel ID is None or contains only whitespace
 if not TOKEN:
