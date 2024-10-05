@@ -1,10 +1,9 @@
 import os
 import telebot
 from telebot.apihelper import ApiException
-from flask import Flask, request
+from flask import Flask
 import threading
 import logging
-import time
 
 # Configure logging to keep track of any issues that occur
 logging.basicConfig(
@@ -27,20 +26,9 @@ bot = telebot.TeleBot(TOKEN, threaded=True)  # Enable threaded mode to handle mu
 # Initialize Flask application
 app = Flask(__name__)
 
-# Webhook Setup
-WEBHOOK_URL_BASE = "https://<your-app-name>.herokuapp.com"
-WEBHOOK_URL_PATH = f"/{TOKEN}/"
-
 @app.route('/')
 def home():
     return "I am alive"
-
-@app.route(WEBHOOK_URL_PATH, methods=['POST'])
-def webhook():
-    json_string = request.get_data().decode('utf-8')
-    update = telebot.types.Update.de_json(json_string)
-    bot.process_new_updates([update])
-    return '', 200
 
 def run_flask():
     try:
@@ -91,12 +79,9 @@ def main():
     # Start the keep-alive server
     keep_alive()
 
-    # Remove any previous webhook and set the new one
-    bot.remove_webhook()
-    time.sleep(1)
-    bot.set_webhook(url=WEBHOOK_URL_BASE + WEBHOOK_URL_PATH)
-
-    logging.info("Webhook set. Bot is now running...")
+    # Start the bot using long polling
+    logging.info("Starting bot with long polling...")
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)
 
 if __name__ == "__main__":
     main()
