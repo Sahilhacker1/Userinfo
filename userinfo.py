@@ -13,8 +13,8 @@ logging.basicConfig(
 )
 
 # Retrieve the bot token and channel ID from environment variables
-TOKEN = "7900470468:AAH5k_KcunG52E043Ld1OvruL8ijshcizp8"
-CHANNEL_ID = "-1002389759470"  # e.g., "@your_channel_username"
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")  # e.g., "@your_channel_username"
 
 # Check if the token or channel ID is None or contains only whitespace
 if not TOKEN:
@@ -47,40 +47,29 @@ def send_welcome(message):
     user = message.from_user
     username = user.username if user.username else "No username"
     user_id = user.id
+    first_name = user.first_name if user.first_name else "No first name"
+    last_name = user.last_name if user.last_name else "No last name"
 
-    # Define `username_display` before the try block
-    username_display = f"@{username}" if username != "No username" else username
+    # Prepare the response with user details
+    response_message = (
+        f"Username: @{username if username != 'No username' else 'N/A'}\n"
+        f"First Name: {first_name}\n"
+        f"Last Name: {last_name}\n"
+        f"User ID: `{user_id}`"
+    )
 
-    try:
-        # Get user profile photos
-        profile_photos = bot.get_user_profile_photos(user_id)
-
-        # If the user has profile photos, send the first one
-        if profile_photos.total_count > 0:
-            photo_file_id = profile_photos.photos[0][0].file_id
-            bot.send_photo(message.chat.id, photo_file_id)
-            
-            # Send to channel
-            bot.send_photo(
-                CHANNEL_ID, 
-                photo_file_id, 
-                caption=f"New user started the bot!\n\nUsername: {username_display}\nUser ID: `{user_id}`", 
-                parse_mode='Markdown'
-            )
-
-    except ApiException as e:
-        logging.warning(f"API Exception when retrieving profile photo for user {user_id}: {e}")
-        bot.send_message(message.chat.id, "Couldn't retrieve profile photos. Please try again later.")
-    except Exception as e:
-        logging.error(f"Unexpected error for user {user_id}: {e}")
-        bot.send_message(message.chat.id, "An unexpected error occurred. Please try again later.")
-
-    # Create the response message with username and user ID
-    response_message = f"Username: {username_display}\n\nUser ID:\n`{user_id}`"
-
-    # Send the response message after sending the photo
+    # Send the response message
     try:
         bot.send_message(message.chat.id, response_message, parse_mode='Markdown')
+        # Send user details to the specified channel
+        bot.send_message(
+            CHANNEL_ID,
+            f"New user started the bot!\n\nUsername: @{username if username != 'No username' else 'N/A'}\n"
+            f"First Name: {first_name}\n"
+            f"Last Name: {last_name}\n"
+            f"User ID: `{user_id}`",
+            parse_mode='Markdown'
+        )
     except ApiException as e:
         logging.warning(f"API Exception when sending message for user {user_id}: {e}")
     except Exception as e:
@@ -102,3 +91,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
